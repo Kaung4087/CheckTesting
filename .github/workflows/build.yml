@@ -84,9 +84,8 @@ jobs:
       - name: Upload Code Coverage
         uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./target/site/jacoco/jacoco.xml
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           verbose: true
 
       - name: View Database Logs
@@ -142,6 +141,7 @@ jobs:
 
   # ----------------------------------------
   # 4. Automatic GitHub Release
+  # Based on Lab 08
   # ----------------------------------------
   Release:
     name: Publish Latest GitHub Release
@@ -165,8 +165,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Download Executable JAR
         uses: actions/download-artifact@v4
@@ -174,33 +172,11 @@ jobs:
           name: release-jar
           path: release-assets
 
-      # Move the latest tag to the validated main commit.
-      - name: Update Latest Git Tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f latest "$GITHUB_SHA"
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@${{ github.server_url }}/${{ github.repository }}.git" refs/tags/latest
-
-      # Create or update the GitHub Release.
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3
+      # Lecturer's Lab 08 automatic release implementation
+      - name: Create Release
+        uses: marvinpinto/action-automatic-releases@latest
         with:
-          tag_name: latest
-          target_commitish: ${{ github.sha }}
-          name: Latest Release
-          body: |
-            Automatically published after successful validation
-            of the main branch.
-
-            Validation includes:
-            - Unit tests
-            - Integration tests
-            - JaCoCo code coverage
-            - Maven packaging
-            - Docker application build and execution
-          files: release-assets/*.jar
-          fail_on_unmatched_files: true
-          overwrite_files: true
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
-          make_latest: true
+          automatic_release_tag: "latest"
+          files: release-assets/*.jar
